@@ -1,3 +1,4 @@
+import aether.AetherPlugin
 import com.typesafe.sbt.pgp.PgpKeys
 import com.typesafe.sbt.SbtPgp
 import sbt.Keys._
@@ -20,7 +21,7 @@ object GlobalPlugin extends AutoPlugin {
   override def projectSettings = publishingSettings ++ Seq(
     organization := org,
     scalaVersion := ScalaVersion,
-    crossScalaVersions := Seq("2.11.12", "2.12.4"),
+    crossScalaVersions := Seq("2.11.12", "2.12.5"),
     resolvers += Resolver.mavenLocal,
     parallelExecution in Test := false,
     scalacOptions := Seq("-unchecked", "-deprecation", "-encoding", "utf8", "-Ywarn-unused-import",
@@ -40,18 +41,11 @@ object GlobalPlugin extends AutoPlugin {
   val publishingSettings = Seq(
     publishMavenStyle := true,
     publishArtifact in Test := false,
-    SbtPgp.autoImport.useGpg := true,
-    SbtPgp.autoImport.useGpgAgent := true,
-    sbtrelease.ReleasePlugin.autoImport.releasePublishArtifactsAction := PgpKeys.publishSigned.value,
+    //SbtPgp.autoImport.useGpg := true,
+    //SbtPgp.autoImport.useGpgAgent := true,
+    //sbtrelease.ReleasePlugin.autoImport.releasePublishArtifactsAction := PgpKeys.publishSigned.value,
     sbtrelease.ReleasePlugin.autoImport.releaseCrossBuild := true,
-    publishTo := {
-      val nexus = "https://oss.sonatype.org/"
-      if (isSnapshot.value) {
-        Some("snapshots" at s"${nexus}content/repositories/snapshots")
-      } else {
-        Some("releases" at s"${nexus}service/local/staging/deploy/maven2")
-      }
-    },
+    publishTo := Some("SRF Maven Repository" at "http://maven.admin.srf.ch"),
     pomExtra := {
       <url>https://github.com/sksamuel/avro4s</url>
         <licenses>
@@ -73,5 +67,5 @@ object GlobalPlugin extends AutoPlugin {
           </developer>
         </developers>
     }
-  )
+  ) ++ AetherPlugin.autoImport.overridePublishSettings ++ List(aether.AetherKeys.aetherOldVersionMethod := true)
 }

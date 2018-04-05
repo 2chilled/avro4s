@@ -27,9 +27,9 @@ trait FromValue[T] {
 trait LowPriorityFromValue {
 
   implicit def genCoproduct[T, C <: Coproduct](implicit gen: Generic.Aux[T, C],
-                                               fromCoproduct: FromValue[C]): FromValue[T] = new FromValue[T] {
+                                               fromCoproduct: Lazy[FromValue[C]]): FromValue[T] = new FromValue[T] {
     override def apply(value: Any, field: Field): T =
-      gen.from(fromCoproduct(value, field))
+      gen.from(fromCoproduct.value(value, field))
   }
 
   implicit def apply[T](implicit fromRecord: FromRecord[T]): FromValue[T] = new FromValue[T] {
@@ -172,11 +172,11 @@ object FromValue extends LowPriorityFromValue {
 
   import scala.reflect.runtime.universe.WeakTypeTag
 
-  private def safeFrom[T: WeakTypeTag](value: Any)(implicit fromValue: FromValue[T]): Option[T] = {
+  private def safeFrom[T: WeakTypeTag](value: Any)(implicit fromValue: Lazy[FromValue[T]]): Option[T] = {
     import scala.reflect.runtime.universe.typeOf
 
     val tpe = implicitly[WeakTypeTag[T]].tpe
-    val from = fromValue
+    val from = fromValue.value
 
     def typeName: String = {
       val nearestPackage = Stream.iterate(tpe.typeSymbol.owner)(_.owner).dropWhile(!_.isPackage).head

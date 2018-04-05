@@ -14,6 +14,10 @@ val `avro4s-core` = project.in(file("avro4s-core"))
 val `mytest` = project.in(file("mytest"))
   .dependsOn(`avro4s-macros`, `avro4s-core`)
   .settings(scalacOptions ++= List("-Xlog-implicits", "-Xprint:typer"))
+  .settings(
+    publishArtifact := false,
+    publish := {}
+  )
 
 val `avro4s-json` = project.in(file("avro4s-json"))
   .dependsOn(`avro4s-core`)
