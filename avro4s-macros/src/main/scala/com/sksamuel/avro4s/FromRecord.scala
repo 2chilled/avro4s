@@ -352,7 +352,7 @@ object FromRecord {
           """
       )
 
-    if(fromValues.isEmpty)
+    if(fromValues.isEmpty && companion == NoSymbol)
       fromRecord(q"${tpe.termSymbol}")
     else
       fromRecord(q"$companion.apply(..$fromValues)")
