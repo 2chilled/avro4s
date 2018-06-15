@@ -375,6 +375,15 @@ class AvroSchemaTest extends WordSpec with Matchers {
     val schema = SchemaFor[TupleTest3]()
     schema.toString(true) shouldBe expected.toString(true)
   }
+  "support Scala object namespaces" in {
+    case class Outer(inner: Outer.Inner)
+    object Outer {
+      final case class Inner(s: String)
+    }
+    val expected = new org.apache.avro.Schema.Parser().parse(getClass.getResourceAsStream("/object_namespace.avsc"))
+    val schema = SchemaFor[Outer]()
+    schema.toString(true) shouldBe expected.toString(true)
+  }
 
   case class TupleTest2(first: String, second: Seq[(TupleTestA, TupleTestB)])
   case class TupleTest3(first: String, second: Seq[(TupleTestA, TupleTestB, TupleTestC)])

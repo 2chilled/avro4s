@@ -1,4 +1,4 @@
-import aether.AetherPlugin
+//import aether.AetherPlugin
 import com.typesafe.sbt.pgp.PgpKeys
 import com.typesafe.sbt.pgp.PgpKeys
 import com.typesafe.sbt.SbtPgp
@@ -68,5 +68,5 @@ object GlobalPlugin extends AutoPlugin {
           </developer>
         </developers>
     }
-  ) ++ AetherPlugin.autoImport.overridePublishSettings ++ List(aether.AetherKeys.aetherOldVersionMethod := true)
+  )// ++ AetherPlugin.autoImport.overridePublishSettings ++ List(aether.AetherKeys.aetherOldVersionMethod := true)
 }
