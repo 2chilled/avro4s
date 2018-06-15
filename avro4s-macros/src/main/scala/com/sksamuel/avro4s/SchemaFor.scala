@@ -30,7 +30,7 @@ trait LowPriorityToSchema {
     protected val schema: Schema = coproductSchema.value()
   }
 
-  implicit def apply[T: Manifest](implicit schemaFor: SchemaFor[T]): ToSchema[T] = new ToSchema[T] {
+  implicit def applyUsingMacro[T: Manifest](implicit schemaFor: SchemaFor[T]): ToSchema[T] = new ToSchema[T] {
     protected val schema = schemaFor()
   }
 }

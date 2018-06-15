@@ -32,7 +32,7 @@ trait LowPriorityFromValue {
       gen.from(fromCoproduct.value(value, field))
   }
 
-  implicit def apply[T](implicit fromRecord: FromRecord[T]): FromValue[T] = new FromValue[T] {
+  implicit def applyUsingMacro[T](implicit fromRecord: FromRecord[T]): FromValue[T] = new FromValue[T] {
     override def apply(value: Any, field: Field): T = value match {
       case record: GenericRecord => fromRecord(record)
     }

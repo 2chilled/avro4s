@@ -26,7 +26,7 @@ trait LowPriorityToValue {
     override def apply(value: T): Any = coproductToValue.value(gen.to(value))
   }
 
-  implicit def apply[T](implicit toRecord: ToRecord[T]): ToValue[T] = new ToValue[T] {
+  implicit def applyUsingMacro[T](implicit toRecord: ToRecord[T]): ToValue[T] = new ToValue[T] {
     override def apply(value: T): GenericRecord = toRecord(value)
   }
 

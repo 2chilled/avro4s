@@ -4,6 +4,7 @@ import com.typesafe.sbt.pgp.PgpKeys
 import com.typesafe.sbt.SbtPgp
 import sbt._
 import sbt.Keys._
+import sbt.{Global, _}
 import sbtrelease.ReleasePlugin
 
 /** Adds common settings automatically to all subprojects */
