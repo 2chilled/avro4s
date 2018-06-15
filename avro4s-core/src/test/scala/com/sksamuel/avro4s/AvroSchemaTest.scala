@@ -381,6 +381,7 @@ class AvroSchemaTest extends WordSpec with Matchers {
       final case class Inner(s: String)
     }
     val expected = new org.apache.avro.Schema.Parser().parse(getClass.getResourceAsStream("/object_namespace.avsc"))
+
     val schema = SchemaFor[Outer]()
     schema.toString(true) shouldBe expected.toString(true)
   }
