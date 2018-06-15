@@ -9,7 +9,7 @@ import shapeless.ops.coproduct.Reify
 import shapeless.ops.hlist.ToList
 import shapeless.{:+:, CNil, Coproduct, Generic, HList, Lazy}
 
-import scala.annotation.implicitNotFound
+import scala.annotation.{implicitNotFound, tailrec}
 import scala.collection.JavaConverters._
 import scala.language.experimental.macros
 import scala.math.BigDecimal.RoundingMode.{RoundingMode, UNNECESSARY}
@@ -110,7 +110,11 @@ object ToSchema extends LowPriorityToSchema {
   }
 
   implicit object UUIDToSchema extends ToSchema[java.util.UUID] {
-    protected val schema = Schema.create(Schema.Type.STRING)
+    protected val schema = {
+      val schema = Schema.create(Schema.Type.STRING)
+      LogicalTypes.uuid().addToSchema(schema)
+      schema
+    }
   }
 
   implicit object LocalDateToSchema extends ToSchema[LocalDate] {
@@ -316,6 +320,25 @@ object SchemaFor {
       q"_root_.com.sksamuel.avro4s.Anno($name, $args)"
     }
 
+    def genericNameSuffix(underlyingType: c.universe.Type): String = {
+      lazy val isAnnotated = underlyingType.typeSymbol.annotations.exists { a =>
+        a.tree.tpe.typeSymbol.fullName match {
+          case "com.sksamuel.avro4s.AvroSpecificGeneric" =>
+            val args = a.tree.children.tail.map(_.toString.stripPrefix("\"").stripSuffix("\""))
+            args match {
+              case head :: Nil => head.toBoolean
+              case _ => false
+            }
+          case _ => false
+        }
+      }
+      if (underlyingType.typeArgs.nonEmpty && isAnnotated) {
+        underlyingType.typeArgs.map(_.typeSymbol.name.decodedName.toString).mkString("_", "_", "")
+      } else {
+        ""
+      }
+    }
+
     lazy val fixedAnnotation: Option[AvroFixed] = tType.typeSymbol.annotations.collectFirst {
       case anno if anno.tree.tpe <:< c.weakTypeOf[AvroFixed] =>
         anno.tree.children.tail match {
@@ -332,7 +355,7 @@ object SchemaFor {
     val sealedTraitOrClass = underlyingType.typeSymbol.isClass && underlyingType.typeSymbol.asClass.isSealed
 
     // name of the actual class we are building
-    val name = underlyingType.typeSymbol.name.decodedName.toString
+    val name = underlyingType.typeSymbol.name.decodedName.toString + genericNameSuffix(underlyingType)
 
     // the default namespace is just the package name
     val defaultNamespace = Stream.iterate(underlyingType.typeSymbol.owner)(_.owner).dropWhile(!_.isPackage).head.fullName
@@ -354,15 +377,22 @@ object SchemaFor {
         val fieldPath = f.fullName
         val annos = annotations(f)
 
+        val defswithsymbols = universe.asInstanceOf[Definitions with SymbolTable with StdNames]
+
         // this gets the method that generates the default value for this field
         // (if the field has a default value otherwise its a nosymbol)
-        val ds = universe.asInstanceOf[Definitions with SymbolTable with StdNames]
-        val defaultGetter = ds.nme.defaultGetterName(ds.nme.CONSTRUCTOR, index + 1)
-        val defaultGetterName = TermName(defaultGetter.toString)
-        val member = underlyingType.companion.member(defaultGetterName)
+        val defaultGetter = defswithsymbols.nme.defaultGetterName(defswithsymbols.nme.CONSTRUCTOR, index + 1)
 
+        // this is a method symbol for the default getter if it exists
+        val member = underlyingType.companion.member(TermName(defaultGetter.toString))
+
+        // if the field is a param with a default value, then we know the getter method will be defined
+        // and so we can use it to generate the default value
         if (f.isTerm && f.asTerm.isParamWithDefault && member.isMethod) {
-          q"""{ _root_.com.sksamuel.avro4s.SchemaFor.fieldBuilder[$sig]($fieldName, Seq(..$annos), $member, $defaultNamespace) }"""
+          val ownerTermName = TermName(member.owner.name.toString)
+          q"""{
+              _root_.com.sksamuel.avro4s.SchemaFor.fieldBuilder[$sig]($fieldName, Seq(..$annos), $ownerTermName.$member, $defaultNamespace)
+          }"""
         } else if (f.typeSignature.<:<(typeOf[scala.Enumeration#Value])) {
           val enumClass = f.typeSignature.toString.stripSuffix(".Value")
           q"""{ _root_.com.sksamuel.avro4s.SchemaFor.enumBuilder($fieldName, $enumClass) }"""
@@ -493,6 +523,7 @@ object SchemaFor {
                            default: Any,
                            parentNamespace: String): Schema.Field = {
 
+    @tailrec
     def toDefaultValue(value: Any): Any = value match {
       case x: Int => x
       case x: Long => x
@@ -500,7 +531,7 @@ object SchemaFor {
       case x: Double => x
       case x: Seq[_] => x.asJava
       case x: Map[_, _] => x.asJava
-      case Some(x) => x
+      case Some(x) => toDefaultValue(x)
       case None => JsonProperties.NULL_VALUE
       case _ => value.toString
     }
