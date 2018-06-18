@@ -179,7 +179,7 @@ object FromValue extends LowPriorityFromValue {
     val from = fromValue.value
 
     def typeName: String = {
-      val nearestPackage = Stream.iterate(tpe.typeSymbol.owner)(_.owner).dropWhile(!_.isPackage).head
+      val nearestPackage = Stream.iterate(tpe.typeSymbol.owner)(_.owner).dropWhile(x => !x.isPackage && !x.isModuleClass).head
       s"${nearestPackage.fullName}.${tpe.typeSymbol.name.decodedName}"
     }
 
