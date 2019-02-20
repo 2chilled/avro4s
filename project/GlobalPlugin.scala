@@ -47,7 +47,6 @@ object GlobalPlugin extends AutoPlugin {
     //SbtPgp.autoImport.useGpgAgent := true,
     //sbtrelease.ReleasePlugin.autoImport.releasePublishArtifactsAction := PgpKeys.publishSigned.value,
     sbtrelease.ReleasePlugin.autoImport.releaseCrossBuild := true,
-    publishTo := Some("SRF Maven Repository" at "http://maven.admin.srf.ch"),
     pomExtra := {
       <url>https://github.com/sksamuel/avro4s</url>
         <licenses>
