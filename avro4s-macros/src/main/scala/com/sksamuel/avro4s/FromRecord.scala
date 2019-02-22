@@ -181,7 +181,30 @@ object FromValue extends LowPriorityFromValue {
     def typeName: String = {
       val nearestPackage = Stream
         .iterate(tpe.typeSymbol.owner)(_.owner)
-        .dropWhile(x => !x.isPackage && !x.isModuleClass && !x.isModule)
+        .dropWhile { x =>
+          val predicate = !x.isPackage && !x.isModuleClass && !x.isModule
+          val log = {
+            val prelog =
+              if(predicate)
+                Some(s"$x is (!x.isPackage && !x.isModuleClass && !x.isModule)")
+              else
+                None
+
+            prelog
+              .map(prelog =>
+                s"""
+                |$prelog
+                |tpe = $tpe
+                |value = $value
+                |tpe.typeSymbol = ${tpe.typeSymbol}
+                |tpe.typeSymbol.owner=${tpe.typeSymbol.owner}""".stripMargin
+              )
+          }
+
+          log.foreach((s: String) => println(s))
+
+          predicate
+        }
         .dropWhile(_.name.decodedName.toString == "package")
         .head
       s"${nearestPackage.fullName}.${tpe.typeSymbol.name.decodedName}"
