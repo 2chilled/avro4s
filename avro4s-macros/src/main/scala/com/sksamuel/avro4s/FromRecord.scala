@@ -186,22 +186,24 @@ object FromValue extends LowPriorityFromValue {
           val log = {
             val prelog =
               if(predicate)
-                Some(s"$x is (!x.isPackage && !x.isModuleClass && !x.isModule)")
+                s"$x is (!x.isPackage && !x.isModuleClass && !x.isModule)"
               else
-                None
+                s"$x is NOT (!x.isPackage && !x.isModuleClass && !x.isModule)"
 
-            prelog
-              .map(prelog =>
-                s"""
-                |$prelog
-                |tpe = $tpe
-                |value = $value
-                |tpe.typeSymbol = ${tpe.typeSymbol}
-                |tpe.typeSymbol.owner=${tpe.typeSymbol.owner}""".stripMargin
-              )
+              s"""
+              |$prelog
+              |tpe = $tpe
+              |value = $value
+              |tpe.typeSymbol = ${tpe.typeSymbol}
+              |tpe.typeSymbol.owner=${tpe.typeSymbol.owner}""".stripMargin
           }
 
-          log.foreach((s: String) => println(s))
+          if(predicate) {
+            if(x == NoSymbol)
+              throw new Exception(s"Oh dear, $x is NoSymbol! Details: $log")
+            else
+              println(log)
+          }
 
           predicate
         }
